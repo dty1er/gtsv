@@ -2,6 +2,7 @@ package gtsv
 
 import (
 	"bytes"
+	"io"
 	"testing"
 )
 
@@ -13,14 +14,12 @@ func Test(t *testing.T) {
 	gr := New(bs)
 
 	for gr.Next() {
-		t.Log("0----")
 		c1 := gr.Int()
-		t.Log("1----")
 		c2 := gr.Int()
-		t.Log("2----")
-		t.Logf("c1=%d, c2=%d\n", c1, c2)
+		c3 := gr.Int()
+		t.Logf("c1=%d, c2=%d, c3=%d\n", c1, c2, c3)
 	}
-	if err := gr.Error(); err != nil {
+	if err := gr.Error(); err != nil && err != io.EOF {
 		t.Errorf("unexpected error: %s", err)
 	}
 }
