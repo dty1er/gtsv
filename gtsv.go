@@ -39,27 +39,26 @@ func (gr *Reader) Next() bool {
 
 	gr.row++
 	for {
-		if len(gr.tmpBuff) <= 0 {
-			fmt.Println("aaa")
-			if gr.rErr != nil {
+		if len(gr.readBuff) <= 0 {
+			if gr.readErr != nil {
+				gr.err = gr.readErr
 				if gr.err != io.EOF {
 					gr.err = fmt.Errorf("cannot read row #%d: %s", gr.row, gr.err)
 				}
+				// if EOF, gr.err is io.EOF now
 				return false
 			}
 			n, err := gr.reader.Read(gr.buff[:]) // first, read and get some bytes and store to buffer
-			gr.rErr = err
-			gr.tmpBuff = gr.buff[:n]
+			gr.readBuff = gr.buff[:n]
+			gr.readErr = err
 		}
 
-		fmt.Println("bbb")
-		n := bytes.IndexByte(gr.tmpBuff, '\n') // read from buffer
+		n := bytes.IndexByte(gr.readBuff, '\n') // read from buffer
 		if n >= 0 {
-			tmp := gr.tmpBuff[:n]
-
 			// next row found
-			gr.tmpBuff = gr.tmpBuff[n+1:]
-			gr.colBuff = tmp
+			read := gr.readBuff[:n]
+			gr.readBuff = gr.readBuff[n+1:]
+			gr.colBuff = read
 			return true
 		}
 		fmt.Println("ccc")
@@ -88,20 +87,20 @@ func (gr *Reader) Int() int {
 
 func (gr *Reader) nextColumn() ([]byte, error) {
 	gr.col++
-	if gr.tmpBuff == nil {
+	if gr.readBuff == nil {
 		return nil, fmt.Errorf("no more columns")
 	}
 
 	n := bytes.IndexByte(gr.colBuff, '\t') // look for tab
 	if n < 0 {
 		// tab is not found, the most right column
-		tmp := gr.colBuff
+		read := gr.colBuff
 		gr.colBuff = nil
-		return tmp, nil
+		return read, nil
 	}
-	tmp := gr.colBuff[:n]
+	read := gr.colBuff[:n]
 	gr.colBuff = gr.colBuff[n+1:]
-	return tmp, nil
+	return read, nil
 }
 
 func bytesToString(b []byte) string {
