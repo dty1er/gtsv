@@ -84,6 +84,19 @@ func (gr *Reader) Int() int {
 	return n
 }
 
+// String returns next string column
+func (gr *Reader) String() string {
+	if gr.err != nil {
+		return ""
+	}
+	b, err := gr.nextColumn()
+	if err != nil {
+		gr.err = fmt.Errorf("cannot read `string`: %s", err)
+		return ""
+	}
+	return string(b)
+}
+
 func (gr *Reader) nextColumn() ([]byte, error) {
 	gr.col++
 	if gr.readBuff == nil {
