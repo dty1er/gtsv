@@ -61,7 +61,6 @@ func (gr *Reader) Next() bool {
 			gr.colBuff = read
 			return true
 		}
-		fmt.Println("ccc")
 	}
 	// implement if cannot find \n
 }
