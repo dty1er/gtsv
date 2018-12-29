@@ -10,14 +10,13 @@ import (
 
 // Reader reads TSV.
 type Reader struct {
-	reader  io.Reader
-	tmpBuff []byte // temporary buffer which stores line
-	colBuff []byte // buffer which stores current column
-	readErr error
-	col     int
-	row     int
-	err     error
-	rErr    error
+	reader   io.Reader
+	readBuff []byte // temporary buffer which stores line
+	colBuff  []byte // buffer which stores current column
+	readErr  error
+	col      int
+	row      int
+	err      error
 
 	buff [6 << 10]byte // large enough
 }
