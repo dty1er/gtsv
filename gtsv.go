@@ -269,6 +269,61 @@ func (gr *Reader) Uint64() uint64 {
 	return 0
 }
 
+// Float32 returns next float32 column
+func (gr *Reader) Float32() float32 {
+	if gr.err != nil {
+		return 0
+	}
+	b, err := gr.nextColumn()
+	if err != nil {
+		gr.err = fmt.Errorf("cannot read `float32`: %s", err)
+		return 0
+	}
+
+	s := bytesToString(b)
+	n, err := strconv.ParseFloat(s, 32)
+
+	if err == nil {
+		return float32(n)
+	}
+	gr.err = fmt.Errorf("cannot parse %s as `float32`: %s", s, err)
+	return 0
+}
+
+// Float64 returns next float64 column
+func (gr *Reader) Float64() float64 {
+	if gr.err != nil {
+		return 0
+	}
+	b, err := gr.nextColumn()
+	if err != nil {
+		gr.err = fmt.Errorf("cannot read `float64`: %s", err)
+		return 0
+	}
+
+	s := bytesToString(b)
+	n, err := strconv.ParseFloat(s, 64)
+
+	if err == nil {
+		return n
+	}
+	gr.err = fmt.Errorf("cannot parse %s as `float64`: %s", s, err)
+	return 0
+}
+
+// Bytes returns next []byte column
+func (gr *Reader) Bytes() []byte {
+	if gr.err != nil {
+		return nil
+	}
+	b, err := gr.nextColumn()
+	if err != nil {
+		gr.err = fmt.Errorf("cannot read `bytes`: %s", err)
+		return nil
+	}
+	return b
+}
+
 // String returns next string column
 func (gr *Reader) String() string {
 	if gr.err != nil {

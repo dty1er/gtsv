@@ -705,6 +705,172 @@ func TestUint64(t *testing.T) {
 	}
 }
 
+func TestFloat32(t *testing.T) {
+	tests := []struct {
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]float32
+		hasError bool
+	}{
+		{
+			name: "float32",
+			tsv: "1.0\t2.1\t3.2\n" +
+				"1.234567\t1.2345678\t1.23456789\n",
+			row:    2,
+			col:    3,
+			result: [][]float32{[]float32{1.0, 2.1, 3.2}, []float32{1.234567, 1.2345678, 1.2345679}},
+		},
+		{
+			name: "contains string",
+			tsv: "1.0\t2.1\t3.2\n" +
+				"1.234567\t1.2345678\ta\n",
+			row:      2,
+			col:      3,
+			result:   [][]float32{[]float32{1.0, 2.1, 3.2}, []float32{1.234567, 1.2345678, 0}},
+			hasError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gr := New(bytes.NewBufferString(tt.tsv))
+			var rowCnt int
+			var ret [][]float32
+
+			for gr.Next() {
+				rowCnt++
+				var line []float32
+				for i := 0; i < tt.col; i++ {
+					line = append(line, gr.Float32())
+				}
+				ret = append(ret, line)
+			}
+			err := gr.Error()
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
+			}
+
+			if tt.row != rowCnt {
+				t.Fatalf("row check failed expected: %d, actual: %d", tt.row, rowCnt)
+			}
+
+			if !reflect.DeepEqual(tt.result, ret) {
+				t.Fatalf("returned value check failed expected: %v, actual: %v", tt.result, ret)
+			}
+		})
+	}
+}
+
+func TestFloat64(t *testing.T) {
+	tests := []struct {
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]float64
+		hasError bool
+	}{
+		{
+			name: "float64",
+			tsv: "1.0\t2.1\t3.2\n" +
+				"1.234567\t1.2345678\t1.23456789012345\n",
+			row:    2,
+			col:    3,
+			result: [][]float64{[]float64{1.0, 2.1, 3.2}, []float64{1.234567, 1.2345678, 1.23456789012345}},
+		},
+		{
+			name: "contains string",
+			tsv: "1.0\t2.1\t3.2\n" +
+				"1.234567\t1.2345678\ta\n",
+			row:      2,
+			col:      3,
+			result:   [][]float64{[]float64{1.0, 2.1, 3.2}, []float64{1.234567, 1.2345678, 0}},
+			hasError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gr := New(bytes.NewBufferString(tt.tsv))
+			var rowCnt int
+			var ret [][]float64
+
+			for gr.Next() {
+				rowCnt++
+				var line []float64
+				for i := 0; i < tt.col; i++ {
+					line = append(line, gr.Float64())
+				}
+				ret = append(ret, line)
+			}
+			err := gr.Error()
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
+			}
+
+			if tt.row != rowCnt {
+				t.Fatalf("row check failed expected: %d, actual: %d", tt.row, rowCnt)
+			}
+
+			if !reflect.DeepEqual(tt.result, ret) {
+				t.Fatalf("returned value check failed expected: %v, actual: %v", tt.result, ret)
+			}
+		})
+	}
+}
+
+func TestBytes(t *testing.T) {
+	tests := []struct {
+		name   string
+		tsv    string
+		row    int
+		col    int
+		result [][][]byte
+	}{
+		{
+			name: "string",
+			tsv: "aaa\tbbb\tccc\n" +
+				"ddd\teee\tfff\n",
+			row: 2,
+			col: 3,
+			result: [][][]byte{[][]byte{[]byte{97, 97, 97}, []byte{98, 98, 98}, []byte{99, 99, 99}},
+				[][]byte{[]byte{100, 100, 100}, []byte{101, 101, 101}, []byte{102, 102, 102}}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gr := New(bytes.NewBufferString(tt.tsv))
+			var rowCnt int
+			var ret [][][]byte
+
+			for gr.Next() {
+				rowCnt++
+				var line [][]byte
+				for i := 0; i < tt.col; i++ {
+					line = append(line, gr.Bytes())
+				}
+				ret = append(ret, line)
+			}
+
+			if err := gr.Error(); err != nil && err != io.EOF {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if tt.row != rowCnt {
+				t.Fatalf("row check failed expected: %d, actual: %d", tt.row, rowCnt)
+			}
+
+			if !reflect.DeepEqual(tt.result, ret) {
+				t.Fatalf("returned value check failed expected: %v, actual: %v", tt.result, ret)
+			}
+		})
+	}
+
+}
+
 func TestString(t *testing.T) {
 	tests := []struct {
 		name   string
