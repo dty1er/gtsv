@@ -22,6 +22,33 @@ type Reader struct {
 	buff [6 << 10]byte // large enough
 }
 
+// Error is the error interface
+type Error interface {
+	Row() int
+	Col() int
+}
+
+// gtsverror contains row, col, type
+type gtsverror struct {
+	row int
+	col int
+}
+
+// Row returns the row number error occurred
+func (e *gtsverror) Row() int {
+	return e.row
+}
+
+// Col returns the col number error occurred
+func (e *gtsverror) Col() int {
+	return e.col
+}
+
+// Error returns error message
+func (e *gtsverror) Error() string {
+	return fmt.Sprintf("Parse failed at row #%d, col #%d", e.row, e.col)
+}
+
 // New returnds new TSV reader from io.Reader
 func New(r io.Reader) *Reader {
 	return &Reader{reader: r, err: nil}
@@ -38,20 +65,25 @@ func (gr *Reader) Next() bool {
 		return false
 	}
 
+	gr.col = 0
 	gr.row++
 	for {
 		if len(gr.readBuff) <= 0 {
 			if gr.readErr != nil {
 				gr.err = gr.readErr
 				if gr.err != io.EOF {
-					gr.err = fmt.Errorf("cannot read row #%d: %s", gr.row, gr.err)
+					gr.err = gr.newError()
 				}
 				// if EOF, gr.err is io.EOF now
 				return false
 			}
 			n, err := gr.reader.Read(gr.buff[:]) // first, read and get some bytes and store to buffer
 			gr.readBuff = gr.buff[:n]
-			gr.readErr = err
+			if err == io.EOF {
+				gr.readErr = err
+			} else if err != nil {
+				gr.readErr = gr.newError()
+			}
 		}
 
 		n := bytes.IndexByte(gr.readBuff, '\n') // read from buffer
@@ -73,7 +105,7 @@ func (gr *Reader) Int() int {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `int`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -82,7 +114,7 @@ func (gr *Reader) Int() int {
 	if err == nil {
 		return n
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `int`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -93,7 +125,7 @@ func (gr *Reader) Uint() uint {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `uint`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -103,7 +135,7 @@ func (gr *Reader) Uint() uint {
 		return uint(n)
 	}
 
-	gr.err = fmt.Errorf("cannot parse %s as `uint`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -114,7 +146,7 @@ func (gr *Reader) Int8() int8 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `int8`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -123,7 +155,7 @@ func (gr *Reader) Int8() int8 {
 	if err == nil && math.MinInt8 <= n && n <= math.MaxInt8 {
 		return int8(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `int8`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -134,7 +166,7 @@ func (gr *Reader) Uint8() uint8 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `uint8`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -143,7 +175,7 @@ func (gr *Reader) Uint8() uint8 {
 	if err == nil && 0 <= n && n <= math.MaxUint8 {
 		return uint8(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `uint8`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -154,7 +186,7 @@ func (gr *Reader) Int16() int16 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `int16`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -163,7 +195,7 @@ func (gr *Reader) Int16() int16 {
 	if err == nil && math.MinInt16 <= n && n <= math.MaxInt16 {
 		return int16(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `int16`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -174,7 +206,7 @@ func (gr *Reader) Uint16() uint16 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `uint16`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -183,7 +215,7 @@ func (gr *Reader) Uint16() uint16 {
 	if err == nil && 0 <= n && n <= math.MaxUint16 {
 		return uint16(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `uint16`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -194,7 +226,7 @@ func (gr *Reader) Int32() int32 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `int32`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -203,8 +235,7 @@ func (gr *Reader) Int32() int32 {
 	if err == nil && math.MinInt32 <= n && n <= math.MaxInt32 {
 		return int32(n)
 	}
-
-	gr.err = fmt.Errorf("cannot parse %s as `int32`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -215,7 +246,7 @@ func (gr *Reader) Uint32() uint32 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `uint32`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -224,7 +255,7 @@ func (gr *Reader) Uint32() uint32 {
 	if err == nil && 0 <= n && n <= math.MaxUint32 {
 		return uint32(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `uint32`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -235,7 +266,7 @@ func (gr *Reader) Int64() int64 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `int64`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -244,7 +275,7 @@ func (gr *Reader) Int64() int64 {
 	if err == nil && math.MinInt64 <= n && n <= math.MaxInt64 {
 		return int64(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `int64`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -255,7 +286,7 @@ func (gr *Reader) Uint64() uint64 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `uint64`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -265,7 +296,7 @@ func (gr *Reader) Uint64() uint64 {
 	if err == nil && 0 <= n && n <= math.MaxUint64 {
 		return uint64(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `uint64`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -276,7 +307,7 @@ func (gr *Reader) Float32() float32 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `float32`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -286,7 +317,7 @@ func (gr *Reader) Float32() float32 {
 	if err == nil {
 		return float32(n)
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `float32`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -297,7 +328,7 @@ func (gr *Reader) Float64() float64 {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `float64`: %s", err)
+		gr.err = gr.newError()
 		return 0
 	}
 
@@ -307,7 +338,7 @@ func (gr *Reader) Float64() float64 {
 	if err == nil {
 		return n
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `float64`: %s", s, err)
+	gr.err = gr.newError()
 	return 0
 }
 
@@ -318,7 +349,7 @@ func (gr *Reader) Bytes() []byte {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `bytes`: %s", err)
+		gr.err = gr.newError()
 		return nil
 	}
 	return b
@@ -331,7 +362,7 @@ func (gr *Reader) String() string {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `string`: %s", err)
+		gr.err = gr.newError()
 		return ""
 	}
 	return string(b)
@@ -344,7 +375,7 @@ func (gr *Reader) Bool() bool {
 	}
 	b, err := gr.nextColumn()
 	if err != nil {
-		gr.err = fmt.Errorf("cannot read `bool`: %s", err)
+		gr.err = gr.newError()
 		return false
 	}
 
@@ -353,7 +384,7 @@ func (gr *Reader) Bool() bool {
 	if err == nil {
 		return n
 	}
-	gr.err = fmt.Errorf("cannot parse %s as `bool`: %s", s, err)
+	gr.err = gr.newError()
 	return false
 }
 
@@ -373,6 +404,10 @@ func (gr *Reader) nextColumn() ([]byte, error) {
 	read := gr.colBuff[:n]
 	gr.colBuff = gr.colBuff[n+1:]
 	return read, nil
+}
+
+func (gr *Reader) newError() *gtsverror {
+	return &gtsverror{row: gr.row, col: gr.col}
 }
 
 func bytesToString(b []byte) string {

@@ -979,5 +979,54 @@ func TestBool(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestError(t *testing.T) {
+	tests := []struct {
+		name   string
+		tsv    string
+		row    int
+		col    int
+		result [][]int
+		error  Error
+	}{
+		{
+			name: "error",
+			tsv: "1\t2\t3\n" +
+				"4\ta\t6\n",
+			row:    2,
+			col:    3,
+			result: [][]int{[]int{1, 2, 3}, []int{4, 0, 6}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gr := New(bytes.NewBufferString(tt.tsv))
+			var rowCnt int
+			var ret [][]int
+
+			for gr.Next() {
+				rowCnt++
+				var line []int
+				for i := 0; i < tt.col; i++ {
+					line = append(line, gr.Int())
+				}
+				ret = append(ret, line)
+			}
+
+			err := gr.Error()
+			if err == nil || err == io.EOF {
+				t.Fatalf("invalid error %s", err)
+			}
+
+			er, ok := err.(Error)
+			if !ok {
+				t.Fatalf("invalid error %s", er)
+			}
+			if er.Row() != 2 || er.Col() != 2 {
+				t.Fatalf("invalid error tracer row: %d, col: %d", er.Row(), er.Col())
+			}
+		})
+	}
 }
