@@ -73,8 +73,9 @@ func (gr *Reader) Next() bool {
 				gr.err = gr.readErr
 				if gr.err != io.EOF {
 					gr.err = gr.newError()
+				} else {
+					gr.err = nil
 				}
-				// if EOF, gr.err is io.EOF now
 				return false
 			}
 			n, err := gr.reader.Read(gr.buff[:]) // first, read and get some bytes and store to buffer
