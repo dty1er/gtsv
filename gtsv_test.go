@@ -9,11 +9,12 @@ import (
 
 func TestInt(t *testing.T) {
 	tests := []struct {
-		name   string
-		tsv    string
-		row    int
-		col    int
-		result [][]int
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]int
+		hasError bool
 	}{
 		{
 			name: "int",
@@ -22,6 +23,15 @@ func TestInt(t *testing.T) {
 			row:    2,
 			col:    3,
 			result: [][]int{[]int{1, 2, 3}, []int{4, 5, 6}},
+		},
+		{
+			name: "int but contains string",
+			tsv: "1\t2\t3\n" +
+				"4\t5\ta\n",
+			row:      2,
+			col:      3,
+			result:   [][]int{[]int{1, 2, 3}, []int{4, 5, 0}},
+			hasError: true,
 		},
 	}
 
