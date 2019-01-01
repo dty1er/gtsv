@@ -1,6 +1,11 @@
 # gtsv - Fast TSV Parser written in Go
 
-TODO: write this
+TODO: 
+
+* write this
+* write godoc
+* unescape
+* handle non enough buffer
 
 ```
 package main
