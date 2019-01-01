@@ -823,11 +823,12 @@ func TestFloat64(t *testing.T) {
 
 func TestBytes(t *testing.T) {
 	tests := []struct {
-		name   string
-		tsv    string
-		row    int
-		col    int
-		result [][][]byte
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][][]byte
+		hasError bool
 	}{
 		{
 			name: "string",
@@ -855,8 +856,9 @@ func TestBytes(t *testing.T) {
 				ret = append(ret, line)
 			}
 
-			if err := gr.Error(); err != nil && err != io.EOF {
-				t.Fatalf("unexpected error: %s", err)
+			err := gr.Error()
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
 			}
 
 			if tt.row != rowCnt {
@@ -873,11 +875,12 @@ func TestBytes(t *testing.T) {
 
 func TestString(t *testing.T) {
 	tests := []struct {
-		name   string
-		tsv    string
-		row    int
-		col    int
-		result [][]string
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]string
+		hasError bool
 	}{
 		{
 			name: "string",
@@ -904,8 +907,67 @@ func TestString(t *testing.T) {
 				ret = append(ret, line)
 			}
 
-			if err := gr.Error(); err != nil && err != io.EOF {
-				t.Fatalf("unexpected error: %s", err)
+			err := gr.Error()
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
+			}
+
+			if tt.row != rowCnt {
+				t.Fatalf("row check failed expected: %d, actual: %d", tt.row, rowCnt)
+			}
+
+			if !reflect.DeepEqual(tt.result, ret) {
+				t.Fatalf("returned value check failed expected: %v, actual: %v", tt.result, ret)
+			}
+		})
+	}
+}
+
+func TestBool(t *testing.T) {
+	tests := []struct {
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]bool
+		hasError bool
+	}{
+		{
+			name: "bool",
+			tsv: "1\tt\tT\tTRUE\ttrue\tTrue\n" +
+				"0\tf\tF\tFALSE\tfalse\tFalse\n", // https://golang.org/pkg/strconv/#ParseBool
+			row:    2,
+			col:    6,
+			result: [][]bool{[]bool{true, true, true, true, true, true}, []bool{false, false, false, false, false, false}},
+		},
+		{
+			name:     "invalid as bool",
+			tsv:      "a\n",
+			row:      1,
+			col:      1,
+			result:   [][]bool{[]bool{false}},
+			hasError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gr := New(bytes.NewBufferString(tt.tsv))
+			var rowCnt int
+			var ret [][]bool
+
+			for gr.Next() {
+				rowCnt++
+				var line []bool
+				for i := 0; i < tt.col; i++ {
+					line = append(line, gr.Bool())
+				}
+				ret = append(ret, line)
+			}
+
+			err := gr.Error()
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
 			}
 
 			if tt.row != rowCnt {

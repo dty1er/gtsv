@@ -337,6 +337,26 @@ func (gr *Reader) String() string {
 	return string(b)
 }
 
+// Bool returns next bool column
+func (gr *Reader) Bool() bool {
+	if gr.err != nil {
+		return false
+	}
+	b, err := gr.nextColumn()
+	if err != nil {
+		gr.err = fmt.Errorf("cannot read `bool`: %s", err)
+		return false
+	}
+
+	s := bytesToString(b)
+	n, err := strconv.ParseBool(s)
+	if err == nil {
+		return n
+	}
+	gr.err = fmt.Errorf("cannot parse %s as `bool`: %s", s, err)
+	return false
+}
+
 func (gr *Reader) nextColumn() ([]byte, error) {
 	gr.col++
 	if gr.readBuff == nil {
