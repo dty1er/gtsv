@@ -1040,20 +1040,36 @@ func TestError(t *testing.T) {
 
 func TestInvalidReadError(t *testing.T) {
 	tests := []struct {
-		name   string
-		tsv    string
-		row    int
-		col    int
-		result [][]int
-		error  Error
+		name     string
+		tsv      string
+		row      int
+		col      int
+		result   [][]int
+		hasError bool
+		errRow   int
+		errCol   int
 	}{
 		{
 			name: "error",
 			tsv: "1\t2\t3\n" +
 				"4\t5\t6\n",
-			row:    2,
-			col:    2, // invalid
-			result: [][]int{[]int{1, 2, 3}, []int{4, 5, 6}},
+			row:      2,
+			col:      2, // invalid
+			result:   [][]int{[]int{1, 2, 3}, []int{4, 5, 6}},
+			hasError: true,
+			errRow:   1,
+			errCol:   3,
+		},
+		{
+			name: "error",
+			tsv: "1\t2\t3" + // \n is missing
+				"4\t5\t6\n",
+			row:      2,
+			col:      3,
+			result:   [][]int{[]int{1, 2, 3}, []int{4, 5, 6}},
+			hasError: true,
+			errRow:   1,
+			errCol:   4,
 		},
 	}
 
@@ -1073,15 +1089,15 @@ func TestInvalidReadError(t *testing.T) {
 			}
 
 			err := gr.Error()
-			if err == nil || err == io.EOF {
-				t.Fatalf("invalid error %s", err)
+			if (err != nil) != tt.hasError && err != io.EOF {
+				t.Fatalf("error is not io.EOF but %s", err)
 			}
 
 			er, ok := err.(Error)
 			if !ok {
 				t.Fatalf("invalid error %s", er)
 			}
-			if er.Row() != 1 || er.Col() != 3 {
+			if er.Row() != tt.errRow || er.Col() != tt.errCol {
 				t.Fatalf("invalid error tracer row: %d, col: %d", er.Row(), er.Col())
 			}
 		})

@@ -14,6 +14,7 @@ type Reader struct {
 	reader       io.Reader
 	readBuff     []byte // temporary buffer which stores line
 	colBuff      []byte // buffer which stores current column
+	reservedBuff []byte // basically won't used. if `buff` is not enough to store line, copy readBuff into this for backup.
 	readErr      error
 	col          int
 	row          int
@@ -58,6 +59,10 @@ func (gr *Reader) Next() bool {
 				gr.err = gr.readErr
 				if gr.err != io.EOF {
 					gr.err = gr.newError()
+
+				} else if len(gr.reservedBuff) > 0 {
+					gr.err = gr.newError()
+
 				} else {
 					gr.err = nil
 				}
@@ -79,11 +84,19 @@ func (gr *Reader) Next() bool {
 			// next row found
 			read := gr.readBuff[:n]
 			gr.readBuff = gr.readBuff[n+1:]
+
+			// append reservedBuff
+			if len(gr.reservedBuff) > 0 {
+				gr.reservedBuff = append(gr.reservedBuff, read...)
+				read = gr.reservedBuff
+				gr.reservedBuff = gr.reservedBuff[:0] // make empty
+			}
 			gr.colBuff = read
 			return true
 		}
+		gr.reservedBuff = append(gr.reservedBuff, gr.readBuff...)
+		gr.readBuff = nil
 	}
-	// implement if cannot find \n
 }
 
 // Int returns next int column

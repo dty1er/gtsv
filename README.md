@@ -4,7 +4,6 @@ TODO:
 
 * write this
 * write godoc
-* handle non enough buffer
 
 ```
 package main
