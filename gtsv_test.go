@@ -988,7 +988,7 @@ func TestBool(t *testing.T) {
 	}
 }
 
-func TestError(t *testing.T) {
+func TestReadError(t *testing.T) {
 	tests := []struct {
 		name   string
 		tsv    string
@@ -1101,5 +1101,94 @@ func TestInvalidReadError(t *testing.T) {
 				t.Fatalf("invalid error tracer row: %d, col: %d", er.Row(), er.Col())
 			}
 		})
+	}
+}
+
+func TestError(t *testing.T) {
+	e := gtsverror{row: 1, col: 2}
+
+	if e.Row() != 1 {
+		t.Errorf("invalid error row")
+	}
+
+	if e.Col() != 2 {
+		t.Errorf("invalid error col")
+	}
+
+	errmsg := "Parse failed at row #1, col #2"
+	if e.Error() != errmsg {
+		t.Errorf("invalid error message")
+	}
+}
+
+func TestReader(t *testing.T) {
+	gr := New(bytes.NewBufferString(""))
+	gr.Int()
+	err := gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Int8()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Int16()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Int32()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Int64()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Uint()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Uint8()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Uint16()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Uint32()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
+	}
+
+	gr = New(bytes.NewBufferString(""))
+	gr.Uint64()
+	err = gr.Error()
+	if err == io.EOF {
+		t.Fatalf("error was io.EOF but %s", err)
 	}
 }
