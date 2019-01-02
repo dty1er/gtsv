@@ -11,13 +11,14 @@ import (
 
 // Reader reads TSV.
 type Reader struct {
-	reader   io.Reader
-	readBuff []byte // temporary buffer which stores line
-	colBuff  []byte // buffer which stores current column
-	readErr  error
-	col      int
-	row      int
-	err      error
+	reader       io.Reader
+	readBuff     []byte // temporary buffer which stores line
+	colBuff      []byte // buffer which stores current column
+	readErr      error
+	col          int
+	row          int
+	err          error
+	needUnescape bool
 
 	buff [6 << 10]byte // large enough
 }
@@ -69,6 +70,8 @@ func (gr *Reader) Next() bool {
 			} else if err != nil {
 				gr.readErr = gr.newError()
 			}
+			gr.needUnescape = (bytes.IndexByte(gr.readBuff, '\\') >= 0)
+
 		}
 
 		n := bytes.IndexByte(gr.readBuff, '\n') // read from buffer
@@ -337,20 +340,60 @@ func (gr *Reader) Bytes() []byte {
 		gr.err = gr.newError()
 		return nil
 	}
-	return b
+
+	if !gr.needUnescape {
+		return b
+	}
+
+	// need to unescape
+	n := bytes.IndexByte(b, '\\')
+	if n < 0 {
+		// Actually there was no '\'. Basically won't reach here
+		return b
+	}
+
+	n++
+	// for example: https://play.golang.org/p/UXkXBXLgsP_O
+	d := b[:n]
+	b = b[n:]
+	for len(b) > 0 {
+		switch b[0] {
+		case 'b':
+			d[len(d)-1] = '\b'
+		case 'f':
+			d[len(d)-1] = '\f'
+		case 'r':
+			d[len(d)-1] = '\r'
+		case 'n':
+			d[len(d)-1] = '\n'
+		case 't':
+			d[len(d)-1] = '\t'
+		case '0':
+			d[len(d)-1] = 0
+		case '\'':
+			d[len(d)-1] = '\''
+		case '\\':
+			d[len(d)-1] = '\\'
+		default:
+			d[len(d)-1] = b[0]
+		}
+
+		b = b[1:]
+		n = bytes.IndexByte(b, '\\')
+		if n < 0 {
+			d = append(d, b...)
+			break
+		}
+		n++
+		d = append(d, b[:n]...)
+		b = b[n:]
+	}
+	return d
 }
 
 // String returns next string column
 func (gr *Reader) String() string {
-	if gr.err != nil {
-		return ""
-	}
-	b, err := gr.nextColumn()
-	if err != nil {
-		gr.err = gr.newError()
-		return ""
-	}
-	return string(b)
+	return string(gr.Bytes())
 }
 
 // Bool returns next bool column

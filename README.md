@@ -4,7 +4,6 @@ TODO:
 
 * write this
 * write godoc
-* unescape
 * handle non enough buffer
 
 ```

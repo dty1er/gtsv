@@ -831,7 +831,7 @@ func TestBytes(t *testing.T) {
 		hasError bool
 	}{
 		{
-			name: "string",
+			name: "bytes",
 			tsv: "aaa\tbbb\tccc\n" +
 				"ddd\teee\tfff\n",
 			row: 2,
@@ -890,6 +890,13 @@ func TestString(t *testing.T) {
 			col:    3,
 			result: [][]string{[]string{"aaa", "bbb", "ccc"}, []string{"ddd", "eee", "fff"}},
 		},
+		{
+			name: "contains unescaped value",
+			tsv: "a \\b a\tb\\tb\n" +
+				"d\\nd\te\\e\n",
+			row: 2,
+			col: 2,
+		},
 	}
 
 	for _, tt := range tests {
@@ -916,7 +923,7 @@ func TestString(t *testing.T) {
 				t.Fatalf("row check failed expected: %d, actual: %d", tt.row, rowCnt)
 			}
 
-			if !reflect.DeepEqual(tt.result, ret) {
+			if tt.result != nil && !reflect.DeepEqual(tt.result, ret) {
 				t.Fatalf("returned value check failed expected: %v, actual: %v", tt.result, ret)
 			}
 		})
