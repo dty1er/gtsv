@@ -4,7 +4,10 @@ import (
 	"fmt"
 )
 
-// Error is the error interface
+// Error is the error interface.
+// If `gt.Error()` returned non-nil,
+// usually it implements this interface.
+// So, Row() and Col() will return error position.
 type Error interface {
 	Row() int
 	Col() int
