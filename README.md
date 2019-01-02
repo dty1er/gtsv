@@ -85,7 +85,7 @@ Output is:
 Output: error row: 3, col: 1
 ```
 
-For more detail, see [godoc]().
+For more detail, see [godoc](https://godoc.org/github.com/yagi5/gtsv).
 
 ### Lisence
 
