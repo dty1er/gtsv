@@ -1,11 +1,21 @@
-# gtsv - Fast TSV Parser written in Go
+## gtsv - Fast TSV Parser written in Go
 
-TODO: 
+### Installation
 
-* write this
-* write godoc
-
+```shell
+$ go get -u github.com/yagi5/gtsv
 ```
+
+### Features
+
+* get values as specific type
+* get row and column numbers which error caused 
+
+### Usage
+
+Valid TSV case (column numbers of every row are all the same, and type specify is compatible) :
+
+```go
 package main
 
 import (
@@ -16,58 +26,67 @@ import (
 )
 
 func main() {
-	tsv := "1\t2.1\ta\n" +
-		"4\t5.2\tb\n" +
-		"7\t8.3\tc\n"
+  tsv := "1\t2.1\ta\n" +
+    "4\t5.2\tb\n" +
+    "7\t8.3\tc\n"
 
-	gt := gtsv.New(bytes.NewBufferString(tsv))
+  gt := gtsv.New(bytes.NewBufferString(tsv)) // pass io.Reader
 
-	for gt.Next() {
-		fmt.Println(gt.Int())
-		fmt.Println(gt.Float64())
-		fmt.Println(gt.String())
-	}
-
-	fmt.Println(gt.Error())
-
-	/*
-
-		Output:
-
-		1
-		2.1
-		a
-		4
-		5.2
-		b
-		7
-		8.3
-		c
-		<nil>
-
-	*/
-
-	invalidTSV()
+  for gt.Next() {
+    fmt.Println(gt.Int())
+    fmt.Println(gt.Float64())
+    fmt.Println(gt.String())
+  }
+  fmt.Println(gt.Error())
 }
+```
 
-func invalidTSV() {
-	tsvInvalid := "1\t2.1\ta\n" +
-		"4\t5.2\tb\n" +
-		"a\t8.3\tc\n" // first column is not int
+Output is:
 
-	gt := gtsv.New(bytes.NewBufferString(tsvInvalid))
+```
+1
+2.1
+a
+4
+5.2
+b
+7
+8.3
+c
+<nil>
+```
 
-	for gt.Next() {
-		fmt.Println(gt.Int())
-		fmt.Println(gt.Float64())
-		fmt.Println(gt.String())
-	}
+Invalid TSV Case:
 
-	if err := gt.Error(); err != nil {
-		er := err.(gtsv.Error)
-		fmt.Printf("error row: %d, col: %d", er.Row(), er.Col())
+```go
+func main() {
+  tsvInvalid := "1\t2.1\ta\n" +
+    "4\t5.2\tb\n" +
+    "a\t8.3\tc\n" // first column is not int
 
-		// Output: error row: 3, col: 1
+  gt := gtsv.New(bytes.NewBufferString(tsvInvalid))
+
+  for gt.Next() {
+    fmt.Println(gt.Int())
+    fmt.Println(gt.Float64())
+    fmt.Println(gt.String())
+  }
+
+  if err := gt.Error(); err != nil {
+    er := err.(gtsv.Error)
+    fmt.Printf("error row: %d, col: %d", er.Row(), er.Col())
 	}
 }
 ```
+
+Output is:
+
+```
+Output: error row: 3, col: 1
+```
+
+For more detail, see [godoc]().
+
+### Lisence
+
+MIT
