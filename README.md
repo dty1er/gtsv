@@ -1,5 +1,9 @@
 ## gtsv - Fast TSV Parser written in Go
 
+[![Build Status](https://travis-ci.org/yagi5/gtsv.svg?branch=master)](https://travis-ci.org/yagi5/gtsv)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yagi5/gtsv)](https://goreportcard.com/report/github.com/yagi5/gtsv)
+[![GoDoc](https://godoc.org/github.com/yagi5/gtsv?status.svg)](https://godoc.org/github.com/yagi5/gtsv)
+
 ### Installation
 
 ```shell
