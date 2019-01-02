@@ -59,9 +59,20 @@ func (gr *Reader) Error() error {
 	return gr.err
 }
 
+// HasNextColumn returns client called Next() even row still has unread column
+func (gr *Reader) HasNextColumn() bool {
+	return gr.colBuff != nil && gr.readBuff != nil
+}
+
 // Next returns true when next row exists.
 func (gr *Reader) Next() bool {
 	if gr.err != nil {
+		return false
+	}
+
+	if gr.HasNextColumn() {
+		gr.col++ // gtsverror.col will be unread column position number
+		gr.err = gr.newError()
 		return false
 	}
 
