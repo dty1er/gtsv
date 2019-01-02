@@ -9,7 +9,9 @@ import (
 	"unsafe"
 )
 
-// Reader reads TSV.
+// Reader contains some fields to store
+// tsv-reading-information.
+// It shouldn't be used by client so unexported.
 type Reader struct {
 	reader       io.Reader
 	readBuff     []byte // temporary buffer which stores line
@@ -24,12 +26,16 @@ type Reader struct {
 	buff [6 << 10]byte // large enough
 }
 
-// New returnds new TSV reader from io.Reader
+// New returnds new TSV reader.
+// This holds passed io.Reader to read it from.
 func New(r io.Reader) *Reader {
 	return &Reader{reader: r, err: nil}
 }
 
-// Error returns error
+// Error returns TSV reading error.
+// If something is wrong, Error() returns error.
+// It is important to know one thing, that `Error()` doesn't returns io.EOF.
+// If `Next()` returned false && and `Error()` returned nil, reading TSV is correctly finished.
 func (gr *Reader) Error() error {
 	return gr.err
 }
@@ -40,6 +46,8 @@ func (gr *Reader) HasNextColumn() bool {
 }
 
 // Next returns true when next row exists.
+// It's expected to use with `for` .
+// If error had happened, `Next()` returns always false.
 func (gr *Reader) Next() bool {
 	if gr.err != nil {
 		return false
@@ -99,7 +107,8 @@ func (gr *Reader) Next() bool {
 	}
 }
 
-// Int returns next int column
+// Int returns next column as int.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Int() int {
 	if gr.err != nil {
 		return 0
@@ -119,7 +128,8 @@ func (gr *Reader) Int() int {
 	return 0
 }
 
-// Uint returns next uint column
+// Uint returns next column as uint.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Uint() uint {
 	if gr.err != nil {
 		return 0
@@ -140,7 +150,8 @@ func (gr *Reader) Uint() uint {
 	return 0
 }
 
-// Int8 returns next int8 column
+// Int8 returns next column as int8.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Int8() int8 {
 	if gr.err != nil {
 		return 0
@@ -160,7 +171,8 @@ func (gr *Reader) Int8() int8 {
 	return 0
 }
 
-// Uint8 returns next uint8 column
+// Uint8 returns next column as uint8.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Uint8() uint8 {
 	if gr.err != nil {
 		return 0
@@ -180,7 +192,8 @@ func (gr *Reader) Uint8() uint8 {
 	return 0
 }
 
-// Int16 returns next int16 column
+// Int16 returns next column as int16.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Int16() int16 {
 	if gr.err != nil {
 		return 0
@@ -200,7 +213,8 @@ func (gr *Reader) Int16() int16 {
 	return 0
 }
 
-// Uint16 returns next uint16 column
+// Uint16 returns next column as uint16.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Uint16() uint16 {
 	if gr.err != nil {
 		return 0
@@ -220,7 +234,8 @@ func (gr *Reader) Uint16() uint16 {
 	return 0
 }
 
-// Int32 returns next int32 column
+// Int32 returns next column as int32.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Int32() int32 {
 	if gr.err != nil {
 		return 0
@@ -240,7 +255,8 @@ func (gr *Reader) Int32() int32 {
 	return 0
 }
 
-// Uint32 returns next uint32 column
+// Uint32 returns next column as uint32.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Uint32() uint32 {
 	if gr.err != nil {
 		return 0
@@ -260,7 +276,8 @@ func (gr *Reader) Uint32() uint32 {
 	return 0
 }
 
-// Int64 returns next int64 column
+// Int64 returns next column as int64.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Int64() int64 {
 	if gr.err != nil {
 		return 0
@@ -280,7 +297,8 @@ func (gr *Reader) Int64() int64 {
 	return 0
 }
 
-// Uint64 returns next uint64 column
+// Uint64 returns next column as uint64.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Uint64() uint64 {
 	if gr.err != nil {
 		return 0
@@ -301,7 +319,8 @@ func (gr *Reader) Uint64() uint64 {
 	return 0
 }
 
-// Float32 returns next float32 column
+// Float32 returns next column as float32.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Float32() float32 {
 	if gr.err != nil {
 		return 0
@@ -322,7 +341,8 @@ func (gr *Reader) Float32() float32 {
 	return 0
 }
 
-// Float64 returns next float64 column
+// Float64 returns next column as float64.
+// If error had happened, it always returns zero-value.
 func (gr *Reader) Float64() float64 {
 	if gr.err != nil {
 		return 0
@@ -343,7 +363,9 @@ func (gr *Reader) Float64() float64 {
 	return 0
 }
 
-// Bytes returns next []byte column
+// Bytes returns next column as []byte.
+// If error had happened, it always returns nil.
+// Escape sequences will be unescaped.
 func (gr *Reader) Bytes() []byte {
 	if gr.err != nil {
 		return nil
@@ -404,12 +426,16 @@ func (gr *Reader) Bytes() []byte {
 	return d
 }
 
-// String returns next string column
+// String returns next column as string.
 func (gr *Reader) String() string {
 	return string(gr.Bytes())
 }
 
-// Bool returns next bool column
+// Bool returns next column as bool.
+// If error had happened, it always returns false.
+// Bool() uses `strconv.ParseBool()` inside, so
+// can read 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False.
+// If any other value, it will be false.
 func (gr *Reader) Bool() bool {
 	if gr.err != nil {
 		return false
